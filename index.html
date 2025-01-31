@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grupo de PI - Univesp</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <div id="login" class="container">
+        <h2>Entre no Grupo de PI</h2>
+        <input type="text" id="nome" placeholder="Seu Nome" required>
+        <input type="text" id="contato" placeholder="Seu Contato (E-mail/Telefone)" required>
+        <input type="text" id="curso" placeholder="Seu Curso" required>
+        <input type="text" id="codigoGrupo" placeholder="Código do Grupo" required>
+        <button id="entrarNoGrupo">Entrar no Grupo</button>
+    </div>
+
+    <div id="sala" class="container" style="display: none;">
+        <h2 id="nomeSala"></h2>
+
+        <h3>Membros do Grupo</h3>
+        <div id="membros"></div>
+
+        <h3>Mensagens</h3>
+        <div id="mensagens" class="mensagem-box"></div>
+
+        <input type="text" id="mensagem" placeholder="Digite sua mensagem">
+        <button id="enviarMensagem">Enviar</button>
+    </div>
+
+    <script type="module" src="script.js"></script>
+
+</body>
+</html>
