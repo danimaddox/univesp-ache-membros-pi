@@ -76,9 +76,7 @@ async function entrarNoGrupo() {
 
     if (grupo != null && !error) {
       const membros = grupo.membros.map((m) => JSON.parse(m));
-      const isMembro = membros.some(
-        (m) => m.contato.toUpper() === contato.toUpper()
-      );
+      const isMembro = membros.some((m) => m.contato === contato);
 
       if (!isMembro) {
         membros.push({ nome, contato, curso });
