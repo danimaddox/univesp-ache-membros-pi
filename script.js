@@ -104,7 +104,7 @@ async function entrarNoGrupo() {
         mensagens: "[]",
       };
 
-      const { data: grupoData, error } = await supabase.from("grupos").insert(novoGrupo);
+      const { data, error } = await supabase.from("grupos").insert(novoGrupo);
 
       if (error) throw error;
 
@@ -117,7 +117,7 @@ async function entrarNoGrupo() {
 
     loginDiv.style.display = "none";
     salaDiv.style.display = "block";
-    nomeSala.textContent = `Grupo: ${codigoGrupo}`;
+    nomeSala.textContent = Grupo: ${codigoGrupo};
 
     carregarMembros(grupo);
     carregarMensagens(grupo);
@@ -139,9 +139,9 @@ function carregarMembros(grupo) {
   membrosDiv.innerHTML = membros
     .map(
       (membro) =>
-        `<p><strong>${membro.nome} (${membro.curso || "Sem curso"}):</strong> ${
+        <p><strong>${membro.nome} (${membro.curso || "Sem curso"}):</strong> ${
           membro.contato
-        }</p>`
+        }</p>
     )
     .join("");
 }
@@ -162,7 +162,7 @@ async function carregarMensagens(grupo) {
       ? JSON.parse(grupoAtualizado.mensagens)
       : [];
     mensagensDiv.innerHTML = mensagens
-      .map((msg) => `<p><strong>${msg.nome}:</strong> ${msg.texto}</p>`)
+      .map((msg) => <p><strong>${msg.nome}:</strong> ${msg.texto}</p>)
       .join("");
   } catch (err) {
     console.error("Erro ao buscar mensagens:", err);
@@ -191,24 +191,16 @@ async function enviarMensagem() {
       (membro) => membro.contato === document.getElementById("contato").value
     );
     let nomeUsuario = usuario ? usuario.nome : "Anônimo"; // Garantindo que 'nome' seja atribuído corretamente
-
-    // Garantir que 'mensagens' seja um array
     let mensagens = grupo.mensagens ? JSON.parse(grupo.mensagens) : [];
-
     mensagens.push({ nome: nomeUsuario, texto: mensagemTexto });
 
-    // Atualizar mensagens no banco de dados
-    const { error: updateError } = await supabase
+    await supabase
       .from("grupos")
       .update({ mensagens: JSON.stringify(mensagens) })
       .eq("codigo", codigoGrupo);
 
-    if (updateError) {
-      throw updateError;
-    }
-
-    carregarMensagens(grupo); // Carregar as mensagens após atualizar
-    mensagemInput.value = ""; // Limpar o campo de mensagem
+    carregarMensagens(grupo);
+    mensagemInput.value = "";
   } catch (err) {
     console.error("Erro ao enviar mensagem:", err);
   }
