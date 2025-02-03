@@ -75,7 +75,9 @@ async function entrarNoGrupo() {
       .single();
 
     if (grupo != null && !error) {
-      const membros = grupo.membros.map((m) => JSON.parse(m));
+      const membros = Array.isArray(grupo.membros)
+        ? grupo.membros.map((m) => (typeof m === "string" ? JSON.parse(m) : m))
+        : JSON.parse(grupo.membros || "[]");
       const isMembro = membros.some((m) => m.contato === contato);
 
       if (!isMembro) {
