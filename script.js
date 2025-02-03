@@ -25,8 +25,6 @@ async function cadastrarUsuario(nome, contato, curso, codigoGrupo) {
       .eq("contato", contato)
       .single();
 
-    if (error && error.code !== "PGRST116") throw error;
-
     if (!usuario) {
       let { data, error } = await supabase
         .from("usuarios")
@@ -40,7 +38,6 @@ async function cadastrarUsuario(nome, contato, curso, codigoGrupo) {
         .from("usuarios")
         .update({ codigo_grupo: codigoGrupo, curso })
         .eq("contato", contato);
-
       if (error) throw error;
     }
     return usuario;
@@ -69,19 +66,18 @@ async function entrarNoGrupo() {
       .single();
 
     if (!grupo) {
-      const { error } = await supabase.from("grupos").insert({
+      let novoGrupo = {
         codigo: codigoGrupo,
         membros: JSON.stringify([{ nome, contato, curso }]),
         mensagens: "[]"
-      });
-      if (error) throw error;
-      grupo = { codigo: codigoGrupo, membros: [{ nome, contato, curso }], mensagens: [] };
+      };
+      await supabase.from("grupos").insert(novoGrupo);
+      grupo = { ...novoGrupo, membros: [{ nome, contato, curso }], mensagens: [] };
     } else {
       let membros = JSON.parse(grupo.membros || "[]");
-      if (!membros.some(m => m.contato === contato)) {
-        membros.push({ nome, contato, curso });
-        await supabase.from("grupos").update({ membros: JSON.stringify(membros) }).eq("codigo", codigoGrupo);
-      }
+      membros = membros.filter(m => m.contato !== contato); // Remove duplicatas
+      membros.push({ nome, contato, curso });
+      await supabase.from("grupos").update({ membros: JSON.stringify(membros) }).eq("codigo", codigoGrupo);
       grupo.membros = membros;
     }
 
