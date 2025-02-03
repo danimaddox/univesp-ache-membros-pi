@@ -74,57 +74,45 @@ async function entrarNoGrupo() {
       .eq("codigo", codigoGrupo)
       .single();
 
-    if (grupo != null && !error) {
-      const membros = Array.isArray(grupo.membros)
+    if (!error && grupo) {
+      // Compatibiliza com a nova e a antiga estrutura
+      let membros = Array.isArray(grupo.membros)
         ? grupo.membros.map((m) => (typeof m === "string" ? JSON.parse(m) : m))
         : JSON.parse(grupo.membros || "[]");
+
       const isMembro = membros.some((m) => m.contato === contato);
 
       if (!isMembro) {
         membros.push({ nome, contato, curso });
 
-        const novosMembrosJsonStringList = membros.map((m) =>
-          JSON.stringify(m)
-        );
+        const membrosFormatados =
+          membros.length > 0 ? membros.map((m) => JSON.stringify(m)) : [];
 
         const { error } = await supabase
           .from("grupos")
-          .update({ membros: novosMembrosJsonStringList })
+          .update({ membros: membrosFormatados })
           .eq("codigo", codigoGrupo);
 
-        if (error) {
-          throw error;
-        }
-
-        grupo.membros = novosMembrosJsonStringList.map((m) => JSON.parse(m));
+        if (error) throw error;
       }
-    } else if (error && error.code == "PGRST116") {
-      const novoMembroJsonStringList = [
-        JSON.stringify({ nome, contato, curso }),
-      ];
-
-      const novoGrupoToInsert = {
+      grupo.membros = membros;
+    } else if (error && error.code === "PGRST116") {
+      // Criando um novo grupo se não existir
+      const novoGrupo = {
         codigo: codigoGrupo,
-        membros: novoMembroJsonStringList,
-        mensagens: [],
+        membros: [JSON.stringify({ nome, contato, curso })],
+        mensagens: "[]",
       };
 
-      const { data, error } = await supabase
-        .from("grupos")
-        .insert(novoGrupoToInsert);
+      const { data: grupoData, error } = await supabase.from("grupos").insert(novoGrupo);
 
-      if (error) {
-        console.error("Erro ao inserir grupo: ", error);
-        throw error;
-      }
+      if (error) throw error;
 
-      const novoGrupoObject = {
-        codigo: novoGrupoToInsert.codigo,
-        membros: novoGrupoToInsert.membros.map((m) => JSON.parse(m)),
+      grupo = {
+        codigo: novoGrupo.codigo,
+        membros: [JSON.parse(novoGrupo.membros[0])],
         mensagens: [],
       };
-
-      grupo = novoGrupoObject;
     }
 
     loginDiv.style.display = "none";
@@ -139,23 +127,12 @@ async function entrarNoGrupo() {
 }
 
 function carregarMembros(grupo) {
-  membrosDiv.innerHTML = grupo.membros
-    .map(
-      (membro) =>
-        `<p><strong>${membro.nome} (${membro.curso || "Sem curso"}):</strong> ${
-          membro.contato
-        }</p>`
-    )
-    .join("");
-}
-
-function carregarMembros(grupo) {
-  if (!grupo.membros) {
+  if (!grupo.membros || grupo.membros.length === 0) {
     membrosDiv.innerHTML = "<p>Ainda não há membros neste grupo.</p>";
     return;
   }
 
-  const membros = Array.isArray(grupo.membros)
+  let membros = Array.isArray(grupo.membros)
     ? grupo.membros.map((m) => (typeof m === "string" ? JSON.parse(m) : m))
     : JSON.parse(grupo.membros || "[]");
 
@@ -214,16 +191,24 @@ async function enviarMensagem() {
       (membro) => membro.contato === document.getElementById("contato").value
     );
     let nomeUsuario = usuario ? usuario.nome : "Anônimo"; // Garantindo que 'nome' seja atribuído corretamente
+
+    // Garantir que 'mensagens' seja um array
     let mensagens = grupo.mensagens ? JSON.parse(grupo.mensagens) : [];
+
     mensagens.push({ nome: nomeUsuario, texto: mensagemTexto });
 
-    await supabase
+    // Atualizar mensagens no banco de dados
+    const { error: updateError } = await supabase
       .from("grupos")
       .update({ mensagens: JSON.stringify(mensagens) })
       .eq("codigo", codigoGrupo);
 
-    carregarMensagens(grupo);
-    mensagemInput.value = "";
+    if (updateError) {
+      throw updateError;
+    }
+
+    carregarMensagens(grupo); // Carregar as mensagens após atualizar
+    mensagemInput.value = ""; // Limpar o campo de mensagem
   } catch (err) {
     console.error("Erro ao enviar mensagem:", err);
   }
