@@ -139,7 +139,16 @@ async function entrarNoGrupo() {
 }
 
 function carregarMembros(grupo) {
-  membrosDiv.innerHTML = grupo.membros
+  if (!grupo.membros) {
+    membrosDiv.innerHTML = "<p>Ainda não há membros neste grupo.</p>";
+    return;
+  }
+
+  const membros = Array.isArray(grupo.membros)
+    ? grupo.membros.map((m) => (typeof m === "string" ? JSON.parse(m) : m))
+    : JSON.parse(grupo.membros || "[]");
+
+  membrosDiv.innerHTML = membros
     .map(
       (membro) =>
         `<p><strong>${membro.nome} (${membro.curso || "Sem curso"}):</strong> ${
@@ -147,6 +156,8 @@ function carregarMembros(grupo) {
         }</p>`
     )
     .join("");
+}
+
 }
 
 async function carregarMensagens(grupo) {
