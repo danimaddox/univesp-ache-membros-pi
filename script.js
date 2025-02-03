@@ -74,45 +74,55 @@ async function entrarNoGrupo() {
       .eq("codigo", codigoGrupo)
       .single();
 
-    if (!error && grupo) {
-      // Compatibiliza com a nova e a antiga estrutura
-      let membros = Array.isArray(grupo.membros)
-        ? grupo.membros.map((m) => (typeof m === "string" ? JSON.parse(m) : m))
-        : JSON.parse(grupo.membros || "[]");
-
+    if (grupo != null && !error) {
+      const membros = grupo.membros.map((m) => JSON.parse(m));
       const isMembro = membros.some((m) => m.contato === contato);
 
       if (!isMembro) {
         membros.push({ nome, contato, curso });
 
-        const membrosFormatados =
-          membros.length > 0 ? membros.map((m) => JSON.stringify(m)) : [];
+        const novosMembrosJsonStringList = membros.map((m) =>
+          JSON.stringify(m)
+        );
 
         const { error } = await supabase
           .from("grupos")
-          .update({ membros: membrosFormatados })
+          .update({ membros: novosMembrosJsonStringList })
           .eq("codigo", codigoGrupo);
 
-        if (error) throw error;
+        if (error) {
+          throw error;
+        }
+
+        grupo.membros = novosMembrosJsonStringList.map((m) => JSON.parse(m));
       }
-      grupo.membros = membros;
-    } else if (error && error.code === "PGRST116") {
-      // Criando um novo grupo se não existir
-      const novoGrupo = {
+    } else if (error && error.code == "PGRST116") {
+      const novoMembroJsonStringList = [
+        JSON.stringify({ nome, contato, curso }),
+      ];
+
+      const novoGrupoToInsert = {
         codigo: codigoGrupo,
-        membros: [JSON.stringify({ nome, contato, curso })],
-        mensagens: "[]",
-      };
-
-      const { data, error } = await supabase.from("grupos").insert(novoGrupo);
-
-      if (error) throw error;
-
-      grupo = {
-        codigo: novoGrupo.codigo,
-        membros: [JSON.parse(novoGrupo.membros[0])],
+        membros: novoMembroJsonStringList,
         mensagens: [],
       };
+
+      const { data, error } = await supabase
+        .from("grupos")
+        .insert(novoGrupoToInsert);
+
+      if (error) {
+        console.error("Erro ao inserir grupo: ", error);
+        throw error;
+      }
+
+      const novoGrupoObject = {
+        codigo: novoGrupoToInsert.codigo,
+        membros: novoGrupoToInsert.membros.map((m) => JSON.parse(m)),
+        mensagens: [],
+      };
+
+      grupo = novoGrupoObject;
     }
 
     loginDiv.style.display = "none";
@@ -127,16 +137,7 @@ async function entrarNoGrupo() {
 }
 
 function carregarMembros(grupo) {
-  if (!grupo.membros || grupo.membros.length === 0) {
-    membrosDiv.innerHTML = "<p>Ainda não há membros neste grupo.</p>";
-    return;
-  }
-
-  let membros = Array.isArray(grupo.membros)
-    ? grupo.membros.map((m) => (typeof m === "string" ? JSON.parse(m) : m))
-    : JSON.parse(grupo.membros || "[]");
-
-  membrosDiv.innerHTML = membros
+  membrosDiv.innerHTML = grupo.membros
     .map(
       (membro) =>
         `<p><strong>${membro.nome} (${membro.curso || "Sem curso"}):</strong> ${
