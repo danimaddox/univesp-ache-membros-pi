@@ -1,4 +1,3 @@
-
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
 const supabaseUrl = "https://yahwpojiggthmbxuqaku.supabase.co";
@@ -105,7 +104,7 @@ async function entrarNoGrupo() {
         mensagens: "[]",
       };
 
-      const { data, error } = await supabase.from("grupos").insert(novoGrupo);
+      const { data: grupoData, error } = await supabase.from("grupos").insert(novoGrupo);
 
       if (error) throw error;
 
@@ -192,16 +191,24 @@ async function enviarMensagem() {
       (membro) => membro.contato === document.getElementById("contato").value
     );
     let nomeUsuario = usuario ? usuario.nome : "Anônimo"; // Garantindo que 'nome' seja atribuído corretamente
+
+    // Garantir que 'mensagens' seja um array
     let mensagens = grupo.mensagens ? JSON.parse(grupo.mensagens) : [];
+
     mensagens.push({ nome: nomeUsuario, texto: mensagemTexto });
 
-    await supabase
+    // Atualizar mensagens no banco de dados
+    const { error: updateError } = await supabase
       .from("grupos")
       .update({ mensagens: JSON.stringify(mensagens) })
       .eq("codigo", codigoGrupo);
 
-    carregarMensagens(grupo);
-    mensagemInput.value = "";
+    if (updateError) {
+      throw updateError;
+    }
+
+    carregarMensagens(grupo); // Carregar as mensagens após atualizar
+    mensagemInput.value = ""; // Limpar o campo de mensagem
   } catch (err) {
     console.error("Erro ao enviar mensagem:", err);
   }
