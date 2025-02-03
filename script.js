@@ -1,3 +1,4 @@
+
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
 const supabaseUrl = "https://yahwpojiggthmbxuqaku.supabase.co";
@@ -12,10 +13,13 @@ const nomeSala = document.getElementById("nomeSala");
 const membrosDiv = document.getElementById("membros");
 const mensagensDiv = document.getElementById("mensagens");
 const mensagemInput = document.getElementById("mensagem");
-const contatoInput = document.getElementById("contato");
 
-document.getElementById("entrarNoGrupo").addEventListener("click", entrarNoGrupo);
-document.getElementById("enviarMensagem").addEventListener("click", enviarMensagem);
+document
+  .getElementById("entrarNoGrupo")
+  .addEventListener("click", entrarNoGrupo);
+document
+  .getElementById("enviarMensagem")
+  .addEventListener("click", enviarMensagem);
 
 async function cadastrarUsuario(nome, contato, curso, codigoGrupo) {
   try {
@@ -26,19 +30,24 @@ async function cadastrarUsuario(nome, contato, curso, codigoGrupo) {
       .single();
 
     if (!usuario) {
-      let { data, error } = await supabase
+      const { data, error } = await supabase
         .from("usuarios")
-        .insert({ nome, contato, curso, codigo_grupo: codigoGrupo })
-        .select();
+        .insert({ nome, contato, curso, codigo_grupo: codigoGrupo });
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
+
       usuario = data[0];
     } else {
-      let { error } = await supabase
+      const { error } = await supabase
         .from("usuarios")
         .update({ codigo_grupo: codigoGrupo, curso })
         .eq("contato", contato);
-      if (error) throw error;
+
+      if (error) {
+        throw error;
+      }
     }
     return usuario;
   } catch (err) {
@@ -48,7 +57,7 @@ async function cadastrarUsuario(nome, contato, curso, codigoGrupo) {
 
 async function entrarNoGrupo() {
   const nome = document.getElementById("nome").value.trim();
-  const contato = contatoInput.value.trim();
+  const contato = document.getElementById("contato").value.trim();
   const curso = document.getElementById("curso").value.trim();
   const codigoGrupo = document.getElementById("codigoGrupo").value.trim();
 
@@ -59,26 +68,52 @@ async function entrarNoGrupo() {
 
   try {
     const usuario = await cadastrarUsuario(nome, contato, curso, codigoGrupo);
+
     let { data: grupo, error } = await supabase
       .from("grupos")
       .select("*")
       .eq("codigo", codigoGrupo)
       .single();
 
-    if (!grupo) {
-      let novoGrupo = {
-        codigo: codigoGrupo,
-        membros: JSON.stringify([{ nome, contato, curso }]),
-        mensagens: "[]"
-      };
-      await supabase.from("grupos").insert(novoGrupo);
-      grupo = { ...novoGrupo, membros: [{ nome, contato, curso }], mensagens: [] };
-    } else {
-      let membros = JSON.parse(grupo.membros || "[]");
-      membros = membros.filter(m => m.contato !== contato); // Remove duplicatas
-      membros.push({ nome, contato, curso });
-      await supabase.from("grupos").update({ membros: JSON.stringify(membros) }).eq("codigo", codigoGrupo);
+    if (!error && grupo) {
+      // Compatibiliza com a nova e a antiga estrutura
+      let membros = Array.isArray(grupo.membros)
+        ? grupo.membros.map((m) => (typeof m === "string" ? JSON.parse(m) : m))
+        : JSON.parse(grupo.membros || "[]");
+
+      const isMembro = membros.some((m) => m.contato === contato);
+
+      if (!isMembro) {
+        membros.push({ nome, contato, curso });
+
+        const membrosFormatados =
+          membros.length > 0 ? membros.map((m) => JSON.stringify(m)) : [];
+
+        const { error } = await supabase
+          .from("grupos")
+          .update({ membros: membrosFormatados })
+          .eq("codigo", codigoGrupo);
+
+        if (error) throw error;
+      }
       grupo.membros = membros;
+    } else if (error && error.code === "PGRST116") {
+      // Criando um novo grupo se não existir
+      const novoGrupo = {
+        codigo: codigoGrupo,
+        membros: [JSON.stringify({ nome, contato, curso })],
+        mensagens: "[]",
+      };
+
+      const { data, error } = await supabase.from("grupos").insert(novoGrupo);
+
+      if (error) throw error;
+
+      grupo = {
+        codigo: novoGrupo.codigo,
+        membros: [JSON.parse(novoGrupo.membros[0])],
+        mensagens: [],
+      };
     }
 
     loginDiv.style.display = "none";
@@ -93,9 +128,22 @@ async function entrarNoGrupo() {
 }
 
 function carregarMembros(grupo) {
-  const membros = JSON.parse(grupo.membros || "[]");
+  if (!grupo.membros || grupo.membros.length === 0) {
+    membrosDiv.innerHTML = "<p>Ainda não há membros neste grupo.</p>";
+    return;
+  }
+
+  let membros = Array.isArray(grupo.membros)
+    ? grupo.membros.map((m) => (typeof m === "string" ? JSON.parse(m) : m))
+    : JSON.parse(grupo.membros || "[]");
+
   membrosDiv.innerHTML = membros
-    .map(membro => `<p><strong>${membro.nome} (${membro.curso || "Sem curso"}):</strong> ${membro.contato}</p>`)
+    .map(
+      (membro) =>
+        `<p><strong>${membro.nome} (${membro.curso || "Sem curso"}):</strong> ${
+          membro.contato
+        }</p>`
+    )
     .join("");
 }
 
@@ -107,11 +155,15 @@ async function carregarMensagens(grupo) {
       .eq("codigo", grupo.codigo)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      throw error;
+    }
 
-    const mensagens = JSON.parse(grupoAtualizado.mensagens || "[]");
+    const mensagens = grupoAtualizado.mensagens
+      ? JSON.parse(grupoAtualizado.mensagens)
+      : [];
     mensagensDiv.innerHTML = mensagens
-      .map(msg => `<p><strong>${msg.nome}:</strong> ${msg.texto}</p>`)
+      .map((msg) => `<p><strong>${msg.nome}:</strong> ${msg.texto}</p>`)
       .join("");
   } catch (err) {
     console.error("Erro ao buscar mensagens:", err);
@@ -121,7 +173,6 @@ async function carregarMensagens(grupo) {
 async function enviarMensagem() {
   const mensagemTexto = mensagemInput.value.trim();
   const codigoGrupo = nomeSala.textContent.replace("Grupo: ", "");
-  const contato = contatoInput.value.trim();
 
   if (!mensagemTexto) return;
 
@@ -132,13 +183,16 @@ async function enviarMensagem() {
       .eq("codigo", codigoGrupo)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      throw error;
+    }
 
-    let membros = JSON.parse(grupo.membros || "[]");
-    let usuario = membros.find(m => m.contato === contato);
-    let nomeUsuario = usuario ? usuario.nome : "Anônimo";
-
-    let mensagens = JSON.parse(grupo.mensagens || "[]");
+    let membros = grupo.membros ? JSON.parse(grupo.membros) : [];
+    let usuario = membros.find(
+      (membro) => membro.contato === document.getElementById("contato").value
+    );
+    let nomeUsuario = usuario ? usuario.nome : "Anônimo"; // Garantindo que 'nome' seja atribuído corretamente
+    let mensagens = grupo.mensagens ? JSON.parse(grupo.mensagens) : [];
     mensagens.push({ nome: nomeUsuario, texto: mensagemTexto });
 
     await supabase
