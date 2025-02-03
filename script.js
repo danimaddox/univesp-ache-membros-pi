@@ -157,9 +157,6 @@ function carregarMembros(grupo) {
     )
     .join("");
 }
-
-}
-
 async function carregarMensagens(grupo) {
   try {
     let { data: grupoAtualizado, error } = await supabase
