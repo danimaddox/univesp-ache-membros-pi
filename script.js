@@ -75,7 +75,9 @@ async function entrarNoGrupo() {
       .single();
 
     if (grupo != null && !error) {
-      const membros = grupo.membros.map((m) => JSON.parse(m));
+      const membros = Array.isArray(grupo.membros)
+        ? grupo.membros.map((m) => (typeof m === "string" ? JSON.parse(m) : m))
+        : JSON.parse(grupo.membros || "[]");
       const isMembro = membros.some((m) => m.contato === contato);
 
       if (!isMembro) {
@@ -138,6 +140,26 @@ async function entrarNoGrupo() {
 
 function carregarMembros(grupo) {
   membrosDiv.innerHTML = grupo.membros
+    .map(
+      (membro) =>
+        `<p><strong>${membro.nome} (${membro.curso || "Sem curso"}):</strong> ${
+          membro.contato
+        }</p>`
+    )
+    .join("");
+}
+
+function carregarMembros(grupo) {
+  if (!grupo.membros) {
+    membrosDiv.innerHTML = "<p>Ainda não há membros neste grupo.</p>";
+    return;
+  }
+
+  const membros = Array.isArray(grupo.membros)
+    ? grupo.membros.map((m) => (typeof m === "string" ? JSON.parse(m) : m))
+    : JSON.parse(grupo.membros || "[]");
+
+  membrosDiv.innerHTML = membros
     .map(
       (membro) =>
         `<p><strong>${membro.nome} (${membro.curso || "Sem curso"}):</strong> ${
