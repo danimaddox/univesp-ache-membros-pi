@@ -1,7 +1,7 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
 const supabaseUrl = "https://yahwpojiggthmbxuqaku.supabase.co";
-const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlhaHdwb2ppZ2d0aG1ieHVxYWt1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgyNDk2OTgsImV4cCI6MjA1MzgyNTY5OH0.Ni9iO_jFXbzWTrxXxeudWJIyiJVO_LIjnhuDIehthCI";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlhaHdwb2ppZ2d0aG1ieXVxYWt1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgyNDk2OTgsImV4cCI6MjA1MzgyNTY5OH0.Ni9iO_jFXbzWTrxXxeudWJIyiJVO_LIjnhuDIehthCI";
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Referências aos elementos da interface
@@ -18,7 +18,7 @@ document.getElementById("enviarMensagem").addEventListener("click", enviarMensag
 async function obterOuCriarUsuario(nome, contato, curso) {
   try {
     let { data: usuario, error } = await supabase
-      .from("usuarios")
+      .from("users") // Nome da tabela corrigido para "users"
       .select("*")
       .eq("contato", contato)
       .single();
@@ -28,9 +28,9 @@ async function obterOuCriarUsuario(nome, contato, curso) {
       throw error;
     }
 
-    if (!usuario) {
+    if (usuario === null) { // Verifica se usuario é null
       const { data, error } = await supabase
-        .from("usuarios")
+        .from("users") // Nome da tabela corrigido para "users"
         .insert([{ nome, contato, curso }])
         .select();
 
@@ -109,7 +109,7 @@ async function entrarNoGrupo() {
 async function carregarMembros(grupo) {
   try {
     const { data: usuarios, error } = await supabase
-      .from("usuarios")
+      .from("users") // Nome da tabela corrigido para "users"
       .select("*")
       .in("id", grupo.membros);
 
@@ -153,7 +153,7 @@ async function enviarMensagem() {
 
   try {
     const { data: usuario, error: usuarioError } = await supabase
-      .from("usuarios")
+      .from("users") // Nome da tabela corrigido para "users"
       .select("nome")
       .eq("contato", contato)
       .single();
