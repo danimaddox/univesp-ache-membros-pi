@@ -15,35 +15,39 @@ const mensagemInput = document.getElementById("mensagem");
 document.getElementById("entrarNoGrupo").addEventListener("click", entrarNoGrupo);
 document.getElementById("enviarMensagem").addEventListener("click", enviarMensagem);
 
-// Função para obter ou criar um usuário
 async function obterOuCriarUsuario(nome, contato, curso) {
-  let { data: usuario, error } = await supabase
-    .from("usuarios")
-    .select("*")
-    .eq("contato", contato)
-    .single();
-
-  if (error) {
-    console.error("Erro ao buscar usuário:", error);
-    throw error; // Rejeita o erro para ser tratado na função que chama
-  }
-
-  if (!usuario) {
-    const { data, error } = await supabase
+  try {
+    let { data: usuario, error } = await supabase
       .from("usuarios")
-      .insert([{ nome, contato, curso }]) // Insere um array de objetos
-      .select();
+      .select("*")
+      .eq("contato", contato)
+      .single();
 
     if (error) {
-      console.error("Erro ao inserir usuário:", error);
+      console.error("Erro ao buscar usuário:", error);
       throw error;
     }
-    usuario = data[0];
+
+    if (!usuario) {
+      const { data, error } = await supabase
+        .from("usuarios")
+        .insert([{ nome, contato, curso }])
+        .select();
+
+      if (error) {
+        console.error("Erro ao inserir usuário:", error);
+        throw error;
+      }
+      usuario = data[0];
+    }
+
+    return usuario;
+  } catch (err) {
+    console.error("Erro em obterOuCriarUsuario:", err);
+    alert("Erro ao obter ou criar usuário: " + err.message);
+    throw err;
   }
-
-  return usuario;
 }
-
 
 async function entrarNoGrupo() {
   const nome = document.getElementById("nome").value.trim();
@@ -65,31 +69,30 @@ async function entrarNoGrupo() {
       .eq("codigo", codigoGrupo)
       .single();
 
-    if (error && error.code !== "PGRST116") { // Trata erros diferentes de "not found"
+    if (error && error.code !== "PGRST116") {
       throw error;
     }
 
     if (!grupo) {
       const { error } = await supabase.from("grupos").insert([{
         codigo: codigoGrupo,
-        membros: [usuario.id], // Armazena o ID do usuário
+        membros: [usuario.id],
         mensagens: [],
       }]);
       if (error) throw error;
 
       grupo = { codigo: codigoGrupo, membros: [usuario.id], mensagens: [] };
     } else {
-      if (!grupo.membros.includes(usuario.id)) { // Verifica se o ID já existe
+      if (!grupo.membros.includes(usuario.id)) {
         const { error } = await supabase
           .from("grupos")
           .update({ membros: [...grupo.membros, usuario.id] })
           .eq("codigo", codigoGrupo);
         if (error) throw error;
 
-        grupo.membros.push(usuario.id); // Atualiza a variável grupo localmente
+        grupo.membros.push(usuario.id);
       }
     }
-
 
     loginDiv.style.display = "none";
     salaDiv.style.display = "block";
@@ -98,8 +101,8 @@ async function entrarNoGrupo() {
     carregarMembros(grupo);
     carregarMensagens(grupo);
   } catch (err) {
-    console.error("Erro ao entrar no grupo:", err);
-    alert("Ocorreu um erro ao entrar no grupo. Verifique o console para mais detalhes.");
+    console.error("Erro em entrarNoGrupo:", err);
+    alert("Erro ao entrar no grupo: " + err.message);
   }
 }
 
@@ -108,7 +111,7 @@ async function carregarMembros(grupo) {
     const { data: usuarios, error } = await supabase
       .from("usuarios")
       .select("*")
-      .in("id", grupo.membros); // Busca usuários cujos IDs estão na lista
+      .in("id", grupo.membros);
 
     if (error) {
       console.error("Erro ao carregar membros:", error);
@@ -123,18 +126,17 @@ async function carregarMembros(grupo) {
   }
 }
 
-
 async function carregarMensagens(grupo) {
   try {
     const { data: grupoAtualizado, error } = await supabase
       .from("grupos")
-      .select("mensagens") // Seleciona apenas a coluna 'mensagens'
+      .select("mensagens")
       .eq("codigo", grupo.codigo)
       .single();
 
     if (error) throw error;
 
-    const mensagens = grupoAtualizado?.mensagens || []; // Usa optional chaining e valor padrão
+    const mensagens = grupoAtualizado?.mensagens || [];
 
     mensagensDiv.innerHTML = mensagens.map(msg => `<p><strong>${msg.nome}:</strong> ${msg.texto}</p>`).join("");
   } catch (err) {
@@ -142,36 +144,36 @@ async function carregarMensagens(grupo) {
   }
 }
 
-
 async function enviarMensagem() {
   const mensagemTexto = mensagemInput.value.trim();
   const codigoGrupo = nomeSala.textContent.replace("Grupo: ", "");
+  const contato = document.getElementById("contato").value; // Obtém o contato do input
 
-  if (!mensagemTexto) return;
+  if (!mensagemTexto || !contato) return; // Verifica se a mensagem e o contato estão preenchidos
 
   try {
     const { data: usuario, error: usuarioError } = await supabase
       .from("usuarios")
-      .select("nome") // Seleciona apenas o nome
-      .eq("contato", document.getElementById("contato").value) // Assume que o contato está disponível
+      .select("nome")
+      .eq("contato", contato)
       .single();
 
     if (usuarioError) {
       console.error("Erro ao buscar nome do usuário:", usuarioError);
-      throw usuarioError; // Lança o erro para ser tratado no bloco catch
+      throw usuarioError;
     }
 
-    const nomeUsuario = usuario ? usuario.nome : "Anônimo"; // Usa o nome do usuário ou "Anônimo"
+    const nomeUsuario = usuario ? usuario.nome : "Anônimo";
 
     let { data: grupo, error } = await supabase
       .from("grupos")
-      .select("mensagens") // Seleciona apenas a coluna 'mensagens'
+      .select("mensagens")
       .eq("codigo", codigoGrupo)
       .single();
 
     if (error) throw error;
 
-    const mensagens = grupo?.mensagens || []; // Usa optional chaining e valor padrão
+    const mensagens = grupo?.mensagens || [];
 
     mensagens.push({ nome: nomeUsuario, texto: mensagemTexto });
 
@@ -182,9 +184,8 @@ async function enviarMensagem() {
 
     if (updateError) {
       console.error("Erro ao enviar mensagem:", updateError);
-      throw updateError; // Lança o erro para ser tratado no bloco catch
+      throw updateError;
     }
-
 
     carregarMensagens(grupo);
     mensagemInput.value = "";
@@ -195,5 +196,4 @@ async function enviarMensagem() {
   }
 }
 
-// Expor o Supabase no escopo global para debug
-window.supabase = supabase;ge
+window.supabase = supabase;
