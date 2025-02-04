@@ -122,15 +122,18 @@ function carregarMembros(grupo) {
 
 async function carregarMensagens(codigoGrupo) {
   try {
-    let { data: grupo, error } = await supabase
+    let { data, error } = await supabase
       .from("grupos")
       .select("mensagens")
       .eq("codigo", codigoGrupo)
       .single();
+
     if (error) throw error;
 
-    const mensagens = grupo.mensagens || [];
-    mensagensDiv.innerHTML = mensagens.map(msg => `<p><strong>${msg.nome}:</strong> ${msg.texto}</p>`).join("");
+    const mensagens = data?.mensagens || [];
+    mensagensDiv.innerHTML = mensagens
+      .map(msg => `<p><strong>${msg.nome}:</strong> ${msg.texto}</p>`)
+      .join("");
   } catch (err) {
     console.error("Erro ao buscar mensagens:", err);
   }
@@ -140,28 +143,34 @@ async function enviarMensagem() {
   const mensagemTexto = mensagemInput.value.trim();
   if (!mensagemTexto) return;
 
+  const codigoGrupo = nomeSala.textContent.replace("Grupo: ", ""); // Obtém o código correto
+
   try {
     let { data: grupo, error } = await supabase
       .from("grupos")
-      .select("codigo, mensagens")
+      .select("mensagens")
       .eq("codigo", codigoGrupo)
       .single();
+    
     if (error) throw error;
 
-    const mensagens = grupo.mensagens || [];
+    let mensagens = grupo?.mensagens || [];
     mensagens.push({ nome: "Anônimo", texto: mensagemTexto });
 
-    await supabase
+    let { error: updateError } = await supabase
       .from("grupos")
       .update({ mensagens })
-      .eq("codigo", grupo.codigo);
+      .eq("codigo", codigoGrupo);
 
-    carregarMensagens(grupo.codigo);
+    if (updateError) throw updateError;
+
+    carregarMensagens(codigoGrupo);
     mensagemInput.value = "";
   } catch (err) {
     console.error("Erro ao enviar mensagem:", err);
   }
 }
+
 
 // Expor o Supabase no escopo global para debug
 window.supabase = supabase;
