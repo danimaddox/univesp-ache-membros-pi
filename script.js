@@ -164,3 +164,6 @@ async function enviarMensagem() {
     console.error("Erro ao enviar mensagem:", err);
   }
 }
+
+// Expor o Supabase no escopo global para debug
+window.supabase = supabase;
