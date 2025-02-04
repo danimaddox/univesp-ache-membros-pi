@@ -58,7 +58,10 @@ async function entrarNoGrupo() {
 
   try {
     const usuario = await cadastrarUsuario(nome, contato, curso, codigoGrupo);
-    
+
+    // REGISTRA LOGIN NO BANCO
+    await registrarLogin(nome, contato, curso, codigoGrupo);
+
     let { data: grupo, error } = await supabase
       .from("grupos")
       .select("*")
