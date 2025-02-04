@@ -22,7 +22,7 @@ async function cadastrarUsuario(nome, contato, curso, codigoGrupo) {
       .from("usuarios")
       .select("*")
       .eq("contato", contato)
-      .single();
+      .limit(1);;
 
     if (!usuario) {
       const { data, error } = await supabase
@@ -120,16 +120,16 @@ function carregarMembros(grupo) {
   membrosDiv.innerHTML = membros.map(m => `<p><strong>${m.nome} (${m.curso || "Sem curso"}):</strong> ${m.contato}</p>`).join("");
 }
 
-async function carregarMensagens(grupo) {
+async function carregarMensagens(codigoGrupo) {
   try {
-    let { data: grupoAtualizado, error } = await supabase
+    let { data: grupo, error } = await supabase
       .from("grupos")
-      .select("*")
-      .eq("codigo", grupo.codigo)
+      .select("mensagens")
+      .eq("codigo", codigoGrupo)
       .single();
     if (error) throw error;
 
-    const mensagens = grupoAtualizado.mensagens ? JSON.parse(grupoAtualizado.mensagens) : [];
+    const mensagens = grupo.mensagens || [];
     mensagensDiv.innerHTML = mensagens.map(msg => `<p><strong>${msg.nome}:</strong> ${msg.texto}</p>`).join("");
   } catch (err) {
     console.error("Erro ao buscar mensagens:", err);
@@ -138,27 +138,25 @@ async function carregarMensagens(grupo) {
 
 async function enviarMensagem() {
   const mensagemTexto = mensagemInput.value.trim();
-  const codigoGrupo = nomeSala.textContent.replace("Grupo: ", "");
-
   if (!mensagemTexto) return;
 
   try {
     let { data: grupo, error } = await supabase
       .from("grupos")
-      .select("*")
+      .select("codigo, mensagens")
       .eq("codigo", codigoGrupo)
       .single();
     if (error) throw error;
 
-    let mensagens = grupo.mensagens ? JSON.parse(grupo.mensagens) : [];
+    const mensagens = grupo.mensagens || [];
     mensagens.push({ nome: "Anônimo", texto: mensagemTexto });
 
     await supabase
       .from("grupos")
-      .update({ mensagens: JSON.stringify(mensagens) })
-      .eq("codigo", codigoGrupo);
+      .update({ mensagens })
+      .eq("codigo", grupo.codigo);
 
-    carregarMensagens(grupo);
+    carregarMensagens(grupo.codigo);
     mensagemInput.value = "";
   } catch (err) {
     console.error("Erro ao enviar mensagem:", err);
