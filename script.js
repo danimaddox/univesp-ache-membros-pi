@@ -16,13 +16,32 @@ const mensagemInput = document.getElementById("mensagem");
 document.getElementById("entrarNoGrupo").addEventListener("click", entrarNoGrupo);
 document.getElementById("enviarMensagem").addEventListener("click", enviarMensagem);
 
+async function registrarLogin(nome, contato, curso, codigoGrupo) {
+  try {
+    const { error } = await supabase.rpc("upsert_user", {
+      p_nome: nome,
+      p_contato: contato,
+      p_codigo_grupo: codigoGrupo,
+      p_curso: curso
+    });
+
+    if (error) {
+      console.error("Erro ao registrar login:", error);
+    } else {
+      console.log("Login registrado com sucesso!");
+    }
+  } catch (err) {
+    console.error("Erro inesperado ao registrar login:", err);
+  }
+}
+
 async function cadastrarUsuario(nome, contato, curso, codigoGrupo) {
   try {
     let { data: usuario, error } = await supabase
       .from("usuarios")
       .select("*")
       .eq("contato", contato)
-      .limit(1);;
+      .single();
 
     if (!usuario) {
       const { data, error } = await supabase
@@ -30,14 +49,20 @@ async function cadastrarUsuario(nome, contato, curso, codigoGrupo) {
         .insert({ nome, contato, curso, codigo_grupo: codigoGrupo })
         .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erro ao inserir usuário:", error);
+        throw error;
+      }
       usuario = data[0];
     } else {
       const { error } = await supabase
         .from("usuarios")
         .update({ codigo_grupo: codigoGrupo, curso })
         .eq("contato", contato);
-      if (error) throw error;
+      if (error) {
+        console.error("Erro ao atualizar usuário:", error);
+        throw error;
+      }
     }
     return usuario;
   } catch (err) {
@@ -58,8 +83,11 @@ async function entrarNoGrupo() {
 
   try {
     const usuario = await cadastrarUsuario(nome, contato, curso, codigoGrupo);
+    if (!usuario) {
+      alert("Erro ao cadastrar usuário!");
+      return;
+    }
 
-    // REGISTRA LOGIN NO BANCO
     await registrarLogin(nome, contato, curso, codigoGrupo);
 
     let { data: grupo, error } = await supabase
@@ -123,20 +151,17 @@ function carregarMembros(grupo) {
   membrosDiv.innerHTML = membros.map(m => `<p><strong>${m.nome} (${m.curso || "Sem curso"}):</strong> ${m.contato}</p>`).join("");
 }
 
-async function carregarMensagens(codigoGrupo) {
+async function carregarMensagens(grupo) {
   try {
-    let { data, error } = await supabase
+    let { data: grupoAtualizado, error } = await supabase
       .from("grupos")
-      .select("mensagens")
-      .eq("codigo", codigoGrupo)
+      .select("*")
+      .eq("codigo", grupo.codigo)
       .single();
-
     if (error) throw error;
 
-    const mensagens = data?.mensagens || [];
-    mensagensDiv.innerHTML = mensagens
-      .map(msg => `<p><strong>${msg.nome}:</strong> ${msg.texto}</p>`)
-      .join("");
+    const mensagens = grupoAtualizado.mensagens ? JSON.parse(grupoAtualizado.mensagens) : [];
+    mensagensDiv.innerHTML = mensagens.map(msg => `<p><strong>${msg.nome}:</strong> ${msg.texto}</p>`).join("");
   } catch (err) {
     console.error("Erro ao buscar mensagens:", err);
   }
@@ -144,36 +169,32 @@ async function carregarMensagens(codigoGrupo) {
 
 async function enviarMensagem() {
   const mensagemTexto = mensagemInput.value.trim();
-  if (!mensagemTexto) return;
+  const codigoGrupo = nomeSala.textContent.replace("Grupo: ", "");
 
-  const codigoGrupo = nomeSala.textContent.replace("Grupo: ", ""); // Obtém o código correto
+  if (!mensagemTexto) return;
 
   try {
     let { data: grupo, error } = await supabase
       .from("grupos")
-      .select("mensagens")
+      .select("*")
       .eq("codigo", codigoGrupo)
       .single();
-    
     if (error) throw error;
 
-    let mensagens = grupo?.mensagens || [];
+    let mensagens = grupo.mensagens ? JSON.parse(grupo.mensagens) : [];
     mensagens.push({ nome: "Anônimo", texto: mensagemTexto });
 
-    let { error: updateError } = await supabase
+    await supabase
       .from("grupos")
-      .update({ mensagens })
+      .update({ mensagens: JSON.stringify(mensagens) })
       .eq("codigo", codigoGrupo);
 
-    if (updateError) throw updateError;
-
-    carregarMensagens(codigoGrupo);
+    carregarMensagens(grupo);
     mensagemInput.value = "";
   } catch (err) {
     console.error("Erro ao enviar mensagem:", err);
   }
 }
-
 
 // Expor o Supabase no escopo global para debug
 window.supabase = supabase;
