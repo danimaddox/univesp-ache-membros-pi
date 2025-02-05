@@ -1,9 +1,9 @@
 document.addEventListener('DOMContentLoaded', function() {
   window.addEventListener('load', function() {
     const supabaseUrl = "https://yahwpojiggthmbxuqaku.supabase.co";
-    const supabaseKey = "SUA_CHAVE_SUPABASE"; // Substitua pela sua chave real
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlhaHdwb2ppZ2d0aG1ieHVxYWt1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgyNDk2OTgsImV4cCI6MjA1MzgyNTY5OH0.Ni9iO_jFXbzWTrxXxeudWJIyiJVO_LIjnhuDIehthCI";
 
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+    const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
     // Referências aos elementos da interface
     const loginDiv = document.getElementById("login");
@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function obterOuCriarUsuario(nome, contato, curso, codigo_grupo) {
       try {
-        let { data: usuario, error } = await supabase
+        let { data: usuario, error } = await supabaseClient
           .from("users")
           .select("*")
           .eq("contato", contato)
@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (!usuario) {
-          const { data, error } = await supabase
+          const { data, error } = await supabaseClient
             .from("users")
             .insert([{ nome, contato, curso, codigo_grupo }])
             .select();
@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', function() {
       try {
         const usuario = await obterOuCriarUsuario(nome, contato, curso, codigoGrupo);
 
-        let { data: grupo, error } = await supabase
+        let { data: grupo, error } = await supabaseClient
           .from("grupos")
           .select("*")
           .eq("codigo", codigoGrupo)
@@ -76,11 +76,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         if (!grupo) {
-          const { error } = await supabase.from("grupos").insert([{
-            codigo: codigoGrupo,
-            membros: [usuario.id],
-            mensagens: [],
-          }]);
+          const { error } = await supabaseClient
+            .from("grupos")
+            .insert([{
+              codigo: codigoGrupo,
+              membros: [usuario.id],
+              mensagens: [],
+            }]);
           if (error) throw error;
 
           grupo = { codigo: codigoGrupo, membros: [usuario.id], mensagens: [] };
@@ -90,7 +92,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
           }
 
-          const { error } = await supabase
+          const { error } = await supabaseClient
             .from("grupos")
             .update({ membros: [...grupo.membros, usuario.id] })
             .eq("codigo", codigoGrupo);
@@ -113,7 +115,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function carregarMembros(grupo) {
       try {
-        const { data: usuarios, error } = await supabase
+        const { data: usuarios, error } = await supabaseClient
           .from("users")
           .select("*")
           .in("id", grupo.membros)
@@ -134,7 +136,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function carregarMensagens(grupo) {
       try {
-        const { data: grupoAtualizado, error } = await supabase
+        const { data: grupoAtualizado, error } = await supabaseClient
           .from("grupos")
           .select("mensagens")
           .eq("codigo", grupo.codigo)
@@ -166,7 +168,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (!mensagemTexto || !contato) return;
 
       try {
-        const { data: usuario, error: usuarioError } = await supabase
+        const { data: usuario, error: usuarioError } = await supabaseClient
           .from("users")
           .select("nome")
           .eq("contato", contato)
@@ -179,7 +181,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const nomeUsuario = usuario ? usuario.nome : "Anônimo";
 
-        let { data: grupo, error } = await supabase
+        let { data: grupo, error } = await supabaseClient
           .from("grupos")
           .select("mensagens")
           .eq("codigo", codigoGrupo)
@@ -194,7 +196,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         mensagens.push({ nome: nomeUsuario, texto: mensagemTexto });
 
-        const { error: updateError } = await supabase
+        const { error: updateError } = await supabaseClient
           .from("grupos")
           .update({ mensagens })
           .eq("codigo", codigoGrupo);
@@ -207,12 +209,12 @@ document.addEventListener('DOMContentLoaded', function() {
         carregarMensagens(grupo);
         mensagemInput.value = "";
 
-      } catch (err) { // Bloco catch para tratar erros
+      } catch (err) {
         console.error("Erro ao enviar mensagem:", err.message);
         alert("Ocorreu um erro ao enviar a mensagem. Verifique o console para mais detalhes.");
-      } // Fechamento do bloco try...catch 
+      }
     }
 
-    window.supabase = supabase;
+    window.supabase = supabaseClient;
   });
 });
