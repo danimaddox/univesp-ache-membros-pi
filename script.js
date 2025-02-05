@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let { data: grupo, error } = await supabaseClient
           .from("grupos")
           .select("*")
-          .eq("codigo_grupo", codigoGrupo) // Usando a nova coluna codigo_grupo
+          .eq("codigo_grupo", codigoGrupo)
           .single();
 
         if (error && error.code !== "PGRST116") {
@@ -75,19 +75,24 @@ document.addEventListener('DOMContentLoaded', function() {
           throw error;
         }
 
-        if (!grupo) { // Cria o grupo *somente* se ele não existir
-          const { error } = await supabaseClient
+        if (!grupo) {
+          const { data: novoGrupo, error: erroNovoGrupo } = await supabaseClient
             .from("grupos")
             .insert([{
               codigo: codigoGrupo,
               codigo_grupo: codigoGrupo,
               membros: [usuario.id],
               mensagens: [],
-            }]);
-          if (error) throw error;
+            }])
+            .select();
 
-          grupo = { codigo: codigoGrupo, codigo_grupo: codigoGrupo, membros: [usuario.id], mensagens: [] };
-        } else { // Adiciona o usuário ao grupo existente
+          if (erroNovoGrupo) {
+            console.error("Erro ao inserir grupo:", erroNovoGrupo.message);
+            throw erroNovoGrupo;
+          }
+
+          grupo = novoGrupo[0];
+        } else {
           if (grupo.membros.includes(usuario.id)) {
             alert("Você já faz parte deste grupo!");
             loginDiv.classList.add("hidden");
@@ -102,7 +107,11 @@ document.addEventListener('DOMContentLoaded', function() {
             .from("grupos")
             .update({ membros: [...grupo.membros, usuario.id] })
             .eq("codigo_grupo", codigoGrupo);
-          if (error) throw error;
+
+          if (error) {
+            console.error("Erro ao adicionar membro:", error.message);
+            throw error;
+          }
 
           grupo.membros.push(usuario.id);
         }
@@ -126,7 +135,7 @@ document.addEventListener('DOMContentLoaded', function() {
           .from("users")
           .select("*")
           .in("id", grupo.membros)
-          .eq("codigo_grupo", grupo.codigo_grupo); // Usando a nova coluna codigo_grupo
+          .eq("codigo_grupo", grupo.codigo_grupo);
 
         if (error) {
           console.error("Erro ao carregar membros:", error.message);
@@ -146,7 +155,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const { data: grupoAtualizado, error } = await supabaseClient
           .from("grupos")
           .select("mensagens")
-          .eq("codigo_grupo", grupo.codigo_grupo) // Filtra pelo código do grupo
+          .eq("codigo_grupo", grupo.codigo_grupo)
           .single();
 
         if (error) {
@@ -190,7 +199,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let { data: grupo, error } = await supabaseClient
           .from("grupos")
           .select("mensagens")
-          .eq("codigo_grupo", codigoGrupo) // Filtra pelo código do grupo
+          .eq("codigo_grupo", codigoGrupo)
           .single();
 
         if (error) {
@@ -211,7 +220,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const { error: updateError } = await supabaseClient
           .from("grupos")
           .update({ mensagens })
-          .eq("codigo_grupo", codigoGrupo); // Filtra pelo código do grupo
+          .eq("codigo_grupo", codigoGrupo);
 
         if (updateError) {
           console.error("Erro ao enviar mensagem:", updateError.message);
