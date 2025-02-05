@@ -1,6 +1,8 @@
 document.addEventListener('DOMContentLoaded', function() {
   const supabaseUrl = "https://yahwpojiggthmbxuqaku.supabase.co";
   const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlhaHdwb2ppZ2d0aG1ieXVxYWt1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgyNDk2OTgsImV4cCI6MjA1MzgyNTY5OH0.Ni9iO_jFXbzWTrxXxeudWJIyiJVO_LIjnhuDIehthCI";
+
+  // Inicializa o Supabase *depois* que a biblioteca for carregada
   const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
   // Referências aos elementos da interface
