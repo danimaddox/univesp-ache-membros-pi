@@ -75,28 +75,33 @@ document.addEventListener('DOMContentLoaded', function() {
           throw error;
         }
 
-        if (!grupo) {
+        if (!grupo) { // Cria o grupo *somente* se ele não existir
           const { error } = await supabaseClient
             .from("grupos")
             .insert([{
               codigo: codigoGrupo,
-              codigo_grupo: codigoGrupo, // Adiciona codigo_grupo ao inserir
+              codigo_grupo: codigoGrupo,
               membros: [usuario.id],
               mensagens: [],
             }]);
           if (error) throw error;
 
           grupo = { codigo: codigoGrupo, codigo_grupo: codigoGrupo, membros: [usuario.id], mensagens: [] };
-        } else {
+        } else { // Adiciona o usuário ao grupo existente
           if (grupo.membros.includes(usuario.id)) {
             alert("Você já faz parte deste grupo!");
+            loginDiv.classList.add("hidden");
+            salaDiv.classList.remove("hidden");
+            nomeSala.textContent = `Grupo: ${codigoGrupo}`;
+            carregarMembros(grupo);
+            carregarMensagens(grupo);
             return;
           }
 
           const { error } = await supabaseClient
             .from("grupos")
             .update({ membros: [...grupo.membros, usuario.id] })
-            .eq("codigo_grupo", codigoGrupo); // Usando a nova coluna codigo_grupo
+            .eq("codigo_grupo", codigoGrupo);
           if (error) throw error;
 
           grupo.membros.push(usuario.id);
@@ -108,6 +113,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         carregarMembros(grupo);
         carregarMensagens(grupo);
+
       } catch (err) {
         console.error("Erro em entrarNoGrupo:", err.message);
         alert("Erro ao entrar no grupo: " + err.message);
