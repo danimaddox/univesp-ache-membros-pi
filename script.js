@@ -149,12 +149,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const mensagens = grupoAtualizado?.mensagens || [];
 
-        if (mensagens.length === 0) {
+        if (mensagens && Array.isArray(mensagens) && mensagens.length > 0) {
+          mensagensDiv.innerHTML = mensagens.map(msg => `<p><strong>${msg.nome}:</strong> ${msg.texto}</p>`).join("");
+        } else {
           mensagensDiv.innerHTML = "<p>Ainda não há mensagens neste grupo.</p>";
-          return;
         }
-
-        mensagensDiv.innerHTML = mensagens.map(msg => `<p><strong>${msg.nome}:</strong> ${msg.texto}</p>`).join("");
       } catch (err) {
         console.error("Erro ao buscar mensagens:", err.message);
       }
@@ -194,7 +193,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const mensagens = grupo?.mensagens || [];
 
-        mensagens.push({ nome: nomeUsuario, texto: mensagemTexto });
+        if (Array.isArray(mensagens)) {
+          mensagens.push({ nome: nomeUsuario, texto: mensagemTexto });
+        } else {
+          console.error("mensagens não é um array:", grupo?.mensagens);
+          alert("Erro ao enviar mensagem. Verifique o console para detalhes.");
+          return;
+        }
 
         const { error: updateError } = await supabaseClient
           .from("grupos")
