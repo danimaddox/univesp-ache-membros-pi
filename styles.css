@@ -39,7 +39,7 @@ button:hover {
 }
 
 /* Ocultar a sala inicialmente */
-.hidden {
+#sala {
     display: none;
 }
 
