@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const nome = document.getElementById("nome").value.trim();
       const contato = document.getElementById("contato").value.trim();
       const curso = document.getElementById("curso").value.trim();
-      const codigoGrupo = document.getElementById("codigoGrupo").value.trim();
+      const grupo = document.getElementById("codigoGrupo").value.trim();
 
       if (!nome || !contato || !curso || !codigoGrupo) {
         alert("Preencha todos os campos!");
