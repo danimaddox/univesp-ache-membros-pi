@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', function() {
           .single();
 
         if (error) {
-          console.error("Erro ao buscar usuário:", error.message);
+          console.error("Erro ao buscar usuário:", error.mensagem);
           throw error;
         }
 
@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .select();
 
           if (error) {
-            console.error("Erro ao inserir usuário:", error.message);
+            console.error("Erro ao inserir usuário:", error.mensagem);
             throw error;
           }
           usuario = data[0];
@@ -44,8 +44,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         return usuario;
       } catch (err) {
-        console.error("Erro em obterOuCriarUsuario:", err.message);
-        alert("Erro ao obter ou criar usuário: " + err.message);
+        console.error("Erro em obterOuCriarUsuario:", err.mensagem);
+        alert("Erro ao obter ou criar usuário: " + err.mensagem);
         throw err;
       }
     }
@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
           .single();
 
         if (error && error.code !== "PGRST116") {
-          console.error("Erro ao buscar grupo:", error.message);
+          console.error("Erro ao buscar grupo:", error.mensagem);
           throw error;
         }
 
@@ -109,8 +109,8 @@ document.addEventListener('DOMContentLoaded', function() {
         carregarMembros(grupo);
         carregarMensagens(grupo);
       } catch (err) {
-        console.error("Erro em entrarNoGrupo:", err.message);
-        alert("Erro ao entrar no grupo: " + err.message);
+        console.error("Erro em entrarNoGrupo:", err.mensagem);
+        alert("Erro ao entrar no grupo: " + err.mensagem);
       }
     }
 
@@ -123,14 +123,14 @@ document.addEventListener('DOMContentLoaded', function() {
           .eq("codigo", grupo.codigo); // Usando a nova coluna codigo
 
         if (error) {
-          console.error("Erro ao carregar membros:", error.message);
+          console.error("Erro ao carregar membros:", error.mensagem);
           membrosDiv.innerHTML = "<p>Erro ao carregar membros.</p>";
           return;
         }
 
         membrosDiv.innerHTML = usuarios.map(usuario => `<p><strong>${usuario.nome} (${usuario.curso || "Sem curso"}):</strong> ${usuario.contato} (Grupo: ${usuario.codigo})</p>`).join("");
       } catch (err) {
-        console.error("Erro ao carregar membros:", err.message);
+        console.error("Erro ao carregar membros:", err.mensagem);
         membrosDiv.innerHTML = "<p>Erro ao carregar membros.</p>";
       }
     }
@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', function() {
           .single();
 
         if (error) {
-          console.error("Erro ao buscar mensagens:", error.message);
+          console.error("Erro ao buscar mensagens:", error.mensagem);
           throw error;
         }
 
@@ -156,7 +156,7 @@ document.addEventListener('DOMContentLoaded', function() {
           mensagensDiv.innerHTML = "<p>Ainda não há mensagens neste grupo.</p>";
         }
       } catch (err) {
-        console.error("Erro ao buscar mensagens:", err.message);
+        console.error("Erro ao buscar mensagens:", err.mensagem);
       }
     }
 
@@ -175,7 +175,7 @@ document.addEventListener('DOMContentLoaded', function() {
           .single();
 
         if (usuarioError) {
-          console.error("Erro ao buscar nome do usuário:", usuarioError.message);
+          console.error("Erro ao buscar nome do usuário:", usuarioError.mensagem);
           throw usuarioError;
         }
 
@@ -188,7 +188,7 @@ document.addEventListener('DOMContentLoaded', function() {
           .single();
 
         if (error) {
-          console.error("Erro ao buscar grupo:", error.message);
+          console.error("Erro ao buscar grupo:", error.mensagem);
           throw error;
         }
 
@@ -208,7 +208,7 @@ document.addEventListener('DOMContentLoaded', function() {
           .eq("codigo", codigo); // Filtra pelo código do grupo
 
         if (updateError) {
-          console.error("Erro ao enviar mensagem:", updateError.message);
+          console.error("Erro ao enviar mensagem:", updateError.mensagem);
           throw updateError;
         }
 
@@ -216,7 +216,7 @@ document.addEventListener('DOMContentLoaded', function() {
         mensagemInput.value = "";
 
       } catch (err) {
-        console.error("Erro ao enviar mensagem:", err.message);
+        console.error("Erro ao enviar mensagem:", err.mensagem);
         alert("Ocorreu um erro ao enviar a mensagem. Verifique o console para mais detalhes.");
       }
     }
