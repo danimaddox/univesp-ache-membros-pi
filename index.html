@@ -5,29 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Grupo de PI - Univesp</title>
     <link rel="stylesheet" href="styles.css">
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
     <div id="login" class="container">
         <h2>Entre no Grupo de PI</h2>
-
-        <label for="nome">Nome:</label>
         <input type="text" id="nome" placeholder="Seu Nome" required>
-
-        <label for="contato">Contato (E-mail/Telefone):</label>
-        <input type="email" id="contato" placeholder="Seu Contato (E-mail/Telefone)" required>
-
-        <label for="curso">Curso:</label>
+        <input type="text" id="contato" placeholder="Seu Contato (E-mail/Telefone)" required>
         <input type="text" id="curso" placeholder="Seu Curso" required>
-
-        <label for="codigoGrupo">Código do Grupo:</label>
         <input type="text" id="codigoGrupo" placeholder="Código do Grupo" required>
-
         <button id="entrarNoGrupo">Entrar no Grupo</button>
     </div>
 
-    <div id="sala" class="container hidden">
+    <div id="sala" class="container" style="display: none;">
         <h2 id="nomeSala"></h2>
 
         <h3>Membros do Grupo</h3>
@@ -36,7 +26,6 @@
         <h3>Mensagens</h3>
         <div id="mensagens" class="mensagem-box"></div>
 
-        <label for="mensagem">Mensagem:</label>
         <input type="text" id="mensagem" placeholder="Digite sua mensagem">
         <button id="enviarMensagem">Enviar</button>
     </div>
